@@ -1,46 +1,46 @@
-resource "azurerm_resource_group" "app-grp" {
-  name     = var.resource-group
+resource "azurerm_resource_group" "test_grp" {
+  name     = var.resource_group_name
   location = var.location
 }
 
-resource "azurerm_virtual_network" "app-vnet" {
-  for_each            = var.vnets
-  name                = each.value.name
-  address_space       = each.value.address_space
+resource "azurerm_virtual_network" "app_vnet" {
+  name                = var.vnet_name
+  address_space       = var.vnet_address_space
   location            = var.location
-  resource_group_name = azurerm_resource_group.app-grp.name
+  resource_group_name = azurerm_resource_group.test_grp.name
 }
 
-resource "azurerm_subnet" "app-subnet" {
-  for_each             = var.subnets
+resource "azurerm_subnet" "app_subnet" {
+  for_each = var.subnets_details
   name                 = each.value.name
-  resource_group_name  = azurerm_resource_group.app-grp.name
-  virtual_network_name = azurerm_virtual_network.app-vnet
+  resource_group_name  = azurerm_resource_group.test_grp.name
+  virtual_network_name = azurerm_virtual_network.app_vnet.name
   address_prefixes     = each.value.address_prefixes
 }
 
-resource "azurerm_network_interface" "app-nic" {
-  for_each            = var.nic
-  name                = each.value.name
+resource "azurerm_network_interface" "nics" {
+  for_each = var.win_vms
+  name                = "${each.value.name}-nic"
   location            = var.location
-  resource_group_name = azurerm_resource_group.app-grp.name
+  resource_group_name = azurerm_resource_group.test_grp.name
 
   ip_configuration {
     name                          = "internal"
-    subnet_id                     = azurerm_subnet.app-subnet[each.value.subnet_key].id
+    subnet_id                     = azurerm_subnet.app_subnet[each.value.subnet_key].id
     private_ip_address_allocation = "Dynamic"
   }
 }
 
-resource "azurerm_linux_virtual_machine" "app-vm" {
-  for_each            = var.vm-name
+resource "azurerm_windows_virtual_machine" "win_vm" {
+  for_each = var.win_vms
   name                = each.value.name
-  resource_group_name = azurerm_resource_group.app-grp.name
+  resource_group_name = azurerm_resource_group.test_grp.name
   location            = var.location
   size                = each.value.size
-  admin_username      = "admin20"
+  admin_username      = "adminuser"
+  admin_password      = "P@$$w0rd1234!"
   network_interface_ids = [
-    azurerm_network_interface.app-nic[each.value.nic_key].id,
+    azurerm_network_interface.nics[each.key].id,
   ]
 
   os_disk {
@@ -49,9 +49,9 @@ resource "azurerm_linux_virtual_machine" "app-vm" {
   }
 
   source_image_reference {
-    publisher = "Canonical"
-    offer     = "0001-com-ubuntu-server-jammy"
-    sku       = "22_04-lts"
+    publisher = "MicrosoftWindowsServer"
+    offer     = "WindowsServer"
+    sku       = "2016-Datacenter"
     version   = "latest"
   }
 }

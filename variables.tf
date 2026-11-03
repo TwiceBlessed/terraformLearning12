@@ -1,38 +1,31 @@
-variable "resource-group" {
-  type        = string
-  description = "RG name"
+variable "resource_group_name" {
+  type = string
 }
 
 variable "location" {
-  type        = string
-  description = "location of the resources"
+  type = string
+  default = "West Europe"
 }
 
-variable "vnets" {
-  type = map(object({
-    name          = string
-    address_space = list(string)
-  }))
+variable "vnet_name" {
+    type = string
 }
 
-variable "subnets" {
+variable "vnet_address_space"{
+  type = list(string)
+}
+
+variable "subnets_details" {
   type = map(object({
-    name             = string
+    name = string
     address_prefixes = list(string)
   }))
 }
 
-variable "nic" {
+variable "win_vms" {
   type = map(object({
-    name       = string
+    name = string
+    size = string
     subnet_key = string
-  }))
-}
-
-variable "vm-name" {
-  type = map(object({
-    name    = string
-    size    = string
-    nic_key = string
   }))
 }
